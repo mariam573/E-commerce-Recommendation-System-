@@ -1,0 +1,51 @@
+user_id,name,age,preferred_categories,budget_min,budget_max,preferred_brands
+1,Ahmed,53,Clothing,200,3200,"Philips,Adidas,Neutrogena,Maybelline"
+2,Sara,53,Books,200,3200,"Gucci,KitchenAid,MAC"
+3,Mohamed,46,"Beauty,Clothing",200,700,"Nike,Huawei,Oxford,Reebok"
+4,Nour,33,"Books,Clothing,Sports",100,3100,"Apple,Sony"
+5,Ali,57,Home,300,1300,"Maybelline,Levi's,Philips,Under Armour"
+6,Fatima,27,"Beauty,Electronics,Sports",50,5050,"Uniqlo,Adidas,New Balance,Adidas"
+7,Omar,33,Home,200,3200,"Adidas,New Balance"
+8,Layla,57,"Sports,Home,Beauty",200,1200,"Puma,Nike"
+9,Youssef,58,"Sports,Home",50,2050,"HarperCollins,Nike"
+10,Mariam,33,"Books,Beauty",100,1100,Zara
+11,Hassan,42,"Clothing,Beauty,Electronics",300,800,"Electrolux,Random House,L'Oreal,Adidas"
+12,Rania,31,"Home,Sports",300,3300,Maybelline
+13,Khaled,18,"Books,Home",100,2100,"L'Oreal,Dove,Uniqlo,Under Armour"
+14,Dina,45,"Electronics,Home",100,5100,"Bosch,Nike,Adidas"
+15,Tarek,52,Home,300,1300,Huawei
+16,Heba,47,Electronics,300,2300,"Philips,Springer,Gucci"
+17,Amr,39,"Books,Home",50,2050,"Huawei,Puma,Apple"
+18,Aya,32,"Electronics,Beauty,Sports",100,1100,"Levi's,Apple"
+19,Mostafa,26,"Beauty,Electronics",200,1200,"Adidas,Penguin"
+20,Nada,56,"Beauty,Electronics,Clothing",200,5200,"Dell,MAC,Apple"
+21,Karim,42,"Beauty,Clothing",100,600,MAC
+22,Salma,37,"Sports,Electronics,Beauty",50,5050,"L'Oreal,KitchenAid,Dyson"
+23,Sherif,59,"Electronics,Home",100,3100,"Dell,KitchenAid,Dyson,Adidas"
+24,Mona,29,"Sports,Books,Home",100,600,"KitchenAid,MAC,HarperCollins,Springer"
+25,Walid,35,"Clothing,Home",100,3100,"Random House,Apple,Under Armour,Springer"
+26,Rana,31,"Books,Beauty",50,5050,"Dove,HarperCollins,Nivea"
+27,Adel,30,Clothing,300,3300,"Under Armour,Nivea,Gap,Puma"
+28,Hana,19,Books,200,5200,"Bosch,Gap"
+29,Bassem,41,"Sports,Beauty",200,3200,"KitchenAid,Nivea,Random House"
+30,Yasmin,35,"Books,Clothing",200,700,Levi's
+31,Tamer,52,"Clothing,Beauty,Sports",200,700,"HarperCollins,MAC,New Balance,Dove"
+32,Samar,30,"Clothing,Books",100,2100,"Wiley,Samsung"
+33,Amir,20,Sports,50,5050,"Zara,Under Armour,Dell"
+34,Doaa,36,"Home,Beauty",300,800,"Adidas,LG,Penguin"
+35,Wael,22,"Home,Electronics",100,5100,H&M
+36,Reem,37,Clothing,300,5300,Nivea
+37,Ashraf,56,"Clothing,Sports,Home",200,5200,"Nike,Wiley,MAC,KitchenAid"
+38,Ghada,57,Sports,100,2100,Gucci
+39,Hossam,60,Clothing,50,1050,"Adidas,Nivea"
+40,Maii,18,"Home,Sports",50,1050,"Oxford,Sony,Uniqlo,Adidas"
+41,Essam,34,"Sports,Clothing,Home",100,1100,L'Oreal
+42,Noha,35,Electronics,200,5200,Nike
+43,Saeed,54,"Home,Electronics",300,3300,"Wiley,Bosch,HarperCollins,Reebok"
+44,Lobna,23,"Electronics,Home,Books",50,2050,"Apple,Huawei,Uniqlo"
+45,Emad,54,Clothing,300,3300,"New Balance,Nike,HarperCollins,Adidas"
+46,Amira,23,"Books,Home",200,3200,"Springer,Dell,Nike"
+47,Ramadan,49,"Beauty,Home",50,2050,Adidas
+48,Reham,34,"Electronics,Home",300,3300,L'Oreal
+49,Hamdy,21,Sports,50,1050,"Neutrogena,Under Armour,Nike"
+50,Nadia,35,"Clothing,Books,Home",100,2100,"HP,Apple,Dove,Gap"

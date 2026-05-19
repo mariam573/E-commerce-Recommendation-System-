@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }} – AIE425Shop{% endblock %}
+{% block meta_desc %}{{ product.description[:150] }}{% endblock %}
+
+{% block content %}
+<!-- ─── Breadcrumb ───────────────────────────────────────────────────────────── -->
+<nav class="breadcrumb" id="breadcrumb" aria-label="breadcrumb">
+  <a href="/">Home</a>
+  <span class="bc-sep">›</span>
+  <a href="/?category={{ product.category }}">{{ product.category }}</a>
+  <span class="bc-sep">›</span>
+  <span>{{ product.name }}</span>
+</nav>
+
+<!-- ─── Product Hero ────────────────────────────────────────────────────────── -->
+<section class="pd-hero" id="product-hero">
+  <div class="pd-img-col">
+    <div class="pd-img-wrap" id="pd-img-wrap">
+      <img src="{{ product.image_url }}" alt="{{ product.name }}" class="pd-img" id="pd-main-img">
+    </div>
+  </div>
+
+  <div class="pd-info-col" id="product-info">
+    <span class="pd-cat">{{ product.category }} · {{ product.brand }}</span>
+    <h1 class="pd-title">{{ product.name }}</h1>
+
+    <div class="pd-rating-row">
+      <span class="pd-stars">{{ product.stars }}</span>
+      <span class="pd-rating-val">{{ product.rating }}/5</span>
+      <span class="pd-rating-label">customer rating</span>
+    </div>
+
+    <div class="pd-price-box" id="pd-price-box">
+      <span class="pd-price">{{ product.price_fmt }}</span>
+      <span class="pd-vat">incl. tax</span>
+    </div>
+
+    <div class="pd-tags" id="pd-tags">
+      {% for tag in product.tags_list %}
+        <span class="tag-chip">{{ tag }}</span>
+      {% endfor %}
+    </div>
+
+    <p class="pd-desc" id="pd-desc">{{ product.description }}</p>
+
+    <div class="pd-actions" id="pd-actions">
+      <button class="btn-primary" id="add-to-cart-btn">🛒 Add to Cart</button>
+      <button class="btn-secondary" id="wishlist-btn">♡ Wishlist</button>
+    </div>
+
+    <div class="pd-meta" id="pd-meta">
+      <div class="meta-row"><span class="meta-label">Brand</span><span class="meta-val">{{ product.brand }}</span></div>
+      <div class="meta-row"><span class="meta-label">Category</span><span class="meta-val">{{ product.category }}</span></div>
+      <div class="meta-row"><span class="meta-label">Product ID</span><span class="meta-val">#{{ product.product_id }}</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── AI Picks for You ────────────────────────────────────────────────────── -->
+{% if recs %}
+<section class="shelf-section" id="ai-picks-section">
+  <div class="shelf-header">
+    <h2 class="shelf-title">✨ AI Picks for You</h2>
+    <a href="/recommendations" class="shelf-more">See all →</a>
+  </div>
+  <div class="shelf-grid">
+    {% for p in recs %}
+    <article class="product-card" id="rec-card-{{ p.product_id }}">
+      <a href="/product/{{ p.product_id }}" class="card-img-link">
+        <div class="card-img-wrap">
+          <img src="{{ p.image_url }}" alt="{{ p.name }}" class="card-img" loading="lazy">
+        </div>
+      </a>
+      <div class="card-body">
+        <span class="card-cat">{{ p.category }}</span>
+        <a href="/product/{{ p.product_id }}" class="card-title">{{ p.name }}</a>
+        <div class="card-rating">
+          <span class="stars">{{ p.stars }}</span>
+          <span class="rating-num">{{ p.rating }}</span>
+        </div>
+        <div class="card-footer">
+          <span class="card-price">{{ p.price_fmt }}</span>
+          <a href="/product/{{ p.product_id }}" class="add-btn">View</a>
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- ─── Related Products ─────────────────────────────────────────────────────── -->
+{% if related %}
+<section class="shelf-section" id="related-section">
+  <div class="shelf-header">
+    <h2 class="shelf-title">🛍️ Related in {{ product.category }}</h2>
+    <a href="/?category={{ product.category }}" class="shelf-more">Browse {{ product.category }} →</a>
+  </div>
+  <div class="shelf-grid">
+    {% for p in related %}
+    <article class="product-card" id="rel-card-{{ p.product_id }}">
+      <a href="/product/{{ p.product_id }}" class="card-img-link">
+        <div class="card-img-wrap">
+          <img src="{{ p.image_url }}" alt="{{ p.name }}" class="card-img" loading="lazy">
+        </div>
+      </a>
+      <div class="card-body">
+        <span class="card-cat">{{ p.brand }}</span>
+        <a href="/product/{{ p.product_id }}" class="card-title">{{ p.name }}</a>
+        <div class="card-rating">
+          <span class="stars">{{ p.stars }}</span>
+          <span class="rating-num">{{ p.rating }}</span>
+        </div>
+        <div class="card-footer">
+          <span class="card-price">{{ p.price_fmt }}</span>
+          <a href="/product/{{ p.product_id }}" class="add-btn">View</a>
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('add-to-cart-btn').addEventListener('click', function(){
+  this.textContent = '✅ Added!';
+  this.style.background = '#2d6a4f';
+  setTimeout(() => {
+    this.textContent = '🛒 Add to Cart';
+    this.style.background = '';
+  }, 1800);
+});
+document.getElementById('wishlist-btn').addEventListener('click', function(){
+  this.textContent = this.textContent.includes('♡') ? '♥ Saved' : '♡ Wishlist';
+});
+</script>
+{% endblock %}

@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+{% block title %}Evaluation & Analysis – AIE425Shop{% endblock %}
+{% block meta_desc %}Compare Collaborative, Content-Based, and Knowledge-Based recommendation methods across RMSE, Precision, Recall, Coverage and Diversity metrics.{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-header" id="analysis-header">
+  <h1 class="page-title">📊 Evaluation & Analysis</h1>
+  <p class="page-sub">Run a full comparison of all recommendation methods across four metrics.</p>
+</div>
+
+<!-- ─── Run Button ──────────────────────────────────────────────────────────── -->
+<div class="eval-run-box" id="eval-run-box">
+  <p class="eval-info">Evaluation tests all 8 methods (CF×4, CB×2, KB×2) against held-out ratings. First run takes ~30 s.</p>
+  <button class="generate-btn" id="run-eval-btn" onclick="runEvaluation()">▶️ Run Full Evaluation</button>
+</div>
+
+<div class="spinner hidden" id="eval-spinner">
+  <div class="spin-ring"></div>
+  <p>Computing metrics across all users and methods… (~30 s)</p>
+</div>
+
+<!-- ─── Results ─────────────────────────────────────────────────────────────── -->
+<div id="eval-results" class="hidden">
+
+  <!-- Metrics Table -->
+  <section class="eval-section" id="eval-table-section">
+    <h2 class="eval-section-title">📋 Metrics Table</h2>
+    <div class="table-wrap" id="eval-table-wrap">
+      <table class="metrics-table" id="metrics-table">
+        <thead id="metrics-thead"></thead>
+        <tbody id="metrics-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Charts -->
+  <section class="eval-section" id="eval-charts-section">
+    <h2 class="eval-section-title">📊 Visual Comparison</h2>
+    <div class="metric-tabs" id="metric-tabs"></div>
+    <div class="chart-wrap" id="chart-wrap">
+      <canvas id="eval-chart"></canvas>
+    </div>
+  </section>
+
+  <!-- Analysis -->
+  <section class="eval-section" id="eval-analysis-section">
+    <h2 class="eval-section-title">🧠 Automated Analysis</h2>
+    <div class="analysis-box" id="analysis-text"></div>
+  </section>
+
+</div>
+
+<!-- ─── Method Explainer ────────────────────────────────────────────────────── -->
+<section class="explainer-section" id="explainer-section">
+  <h2 class="eval-section-title" style="margin-bottom:18px">📚 Method Explainer</h2>
+
+  <div class="accordion" id="acc-cf">
+    <button class="acc-btn" onclick="toggleAcc('acc-cf')">
+      🤝 Collaborative Filtering – Overview <span class="acc-arrow">▾</span>
+    </button>
+    <div class="acc-body">
+      <div class="acc-content">
+        <p><strong>What it is:</strong> Recommends items based on the idea that users who agreed in the past will agree in the future. Relies entirely on rating history.</p>
+        <div class="method-grid">
+          <div class="method-card"><h3>1. User-Based Pearson</h3><p>Mean-centres ratings then computes Pearson correlation between every user pair. Accounts for individual rating bias (some users always rate high/low).</p></div>
+          <div class="method-card"><h3>2. User-Based Jaccard</h3><p>Treats interactions as binary (any rating = interacted). Scores neighbours by J(A,B) = |A∩B| / |A∪B|. Designed for implicit/binary feedback.</p></div>
+          <div class="method-card"><h3>3. Item-Based Adj. Cosine</h3><p>Subtracts each user's mean before computing cosine similarity between items. More stable than user-based as item catalogues change less than user tastes.</p></div>
+          <div class="method-card"><h3>4. MF Gradient Descent</h3><p>Decomposes the user-item matrix into latent factor matrices P and Q via manual SGD. Predicted rating = P[u]·Q[i]. No built-in decomposition used.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="accordion" id="acc-cb">
+    <button class="acc-btn" onclick="toggleAcc('acc-cb')">
+      📝 Content-Based Recommendation – Overview <span class="acc-arrow">▾</span>
+    </button>
+    <div class="acc-body">
+      <div class="acc-content">
+        <p><strong>What it is:</strong> Recommends items similar to those the user has interacted with, based solely on item attributes. No data from other users needed.</p>
+        <div class="method-grid">
+          <div class="method-card"><h3>1. TF-IDF + Cosine</h3><p>Each product is converted into a text document. TF-IDF vectors are computed from scratch, then compared via cosine similarity.</p></div>
+          <div class="method-card"><h3>2. Feature Vector</h3><p>Category and brand are one-hot encoded; price and rating are min-max normalised. Cosine similarity finds structurally similar products.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="accordion" id="acc-kb">
+    <button class="acc-btn" onclick="toggleAcc('acc-kb')">
+      🧠 Knowledge-Based Recommendation – Overview <span class="acc-arrow">▾</span>
+    </button>
+    <div class="acc-body">
+      <div class="acc-content">
+        <p><strong>What it is:</strong> Applies explicit domain knowledge or user constraints. Does not rely on historical ratings.</p>
+        <div class="method-grid">
+          <div class="method-card"><h3>1. Constraint-Based</h3><p>Accepts hard constraints: max budget, preferred categories, brands, min rating. Surviving products ranked by overall rating.</p></div>
+          <div class="method-card"><h3>2. Case-Based Reasoning</h3><p>Takes a reference product and scores all others on weighted similarity: Category 40%, Brand 20%, Price 20%, Rating 20%.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="accordion" id="acc-metrics">
+    <button class="acc-btn" onclick="toggleAcc('acc-metrics')">
+      📏 Evaluation Metrics Explained <span class="acc-arrow">▾</span>
+    </button>
+    <div class="acc-body">
+      <div class="acc-content">
+        <div class="method-grid">
+          <div class="method-card"><h3>RMSE</h3><p>Root Mean Squared Error — how accurately the model predicts held-out ratings. Lower = better. Only applies to CF methods.</p></div>
+          <div class="method-card"><h3>Precision@5</h3><p>Of the top-5 recommendations, what fraction are genuinely relevant (rating ≥ 4)? Higher = better.</p></div>
+          <div class="method-card"><h3>Recall@5</h3><p>Of all items the user would rate ≥ 4, how many appear in the top-5? Higher = better.</p></div>
+          <div class="method-card"><h3>Coverage</h3><p>What % of the catalogue is recommended at least once? High coverage avoids popularity bias.</p></div>
+          <div class="method-card"><h3>Diversity</h3><p>Average pairwise cosine distance between recommended TF-IDF vectors. Higher = more varied lists.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let evalChart = null;
+let evalData  = null;
+
+function runEvaluation() {
+  document.getElementById('run-eval-btn').disabled = true;
+  document.getElementById('run-eval-btn').textContent = '⏳ Running…';
+  document.getElementById('eval-spinner').classList.remove('hidden');
+  document.getElementById('eval-results').classList.add('hidden');
+
+  fetch('/api/evaluate', { method: 'POST' })
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('eval-spinner').classList.add('hidden');
+      document.getElementById('run-eval-btn').disabled = false;
+      document.getElementById('run-eval-btn').textContent = '▶️ Run Full Evaluation';
+
+      if (data.error) { alert('Error: ' + data.error); return; }
+      evalData = data;
+      renderTable(data);
+      buildMetricTabs(data);
+      renderChart(data, data.columns[1]);  // default first metric
+      document.getElementById('analysis-text').innerHTML =
+        data.analysis.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      document.getElementById('eval-results').classList.remove('hidden');
+    })
+    .catch(err => {
+      document.getElementById('eval-spinner').classList.add('hidden');
+      document.getElementById('run-eval-btn').disabled = false;
+      document.getElementById('run-eval-btn').textContent = '▶️ Run Full Evaluation';
+      alert('Error: ' + err);
+    });
+}
+
+function renderTable(data) {
+  const thead = document.getElementById('metrics-thead');
+  const tbody = document.getElementById('metrics-tbody');
+  thead.innerHTML = '<tr>' + data.columns.map(c => `<th>${c}</th>`).join('') + '</tr>';
+  tbody.innerHTML = data.rows.map(row =>
+    '<tr>' + row.map((v, i) => {
+      if (i === 0) return `<td><strong>${v}</strong></td>`;
+      if (v === 'N/A' || v === null) return '<td class="na">N/A</td>';
+      const fv = parseFloat(v);
+      if (data.columns[i] === 'Coverage') return `<td>${(fv*100).toFixed(1)}%</td>`;
+      return `<td>${fv.toFixed(4)}</td>`;
+    }).join('') + '</tr>'
+  ).join('');
+}
+
+function buildMetricTabs(data) {
+  const metrics = data.columns.slice(1);
+  const container = document.getElementById('metric-tabs');
+  container.innerHTML = metrics.map((m,i) =>
+    `<button class="metric-tab${i===0?' active':''}" onclick="selectMetric('${m}',this)">${m}</button>`
+  ).join('');
+}
+
+function selectMetric(metric, btn) {
+  document.querySelectorAll('.metric-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderChart(evalData, metric);
+}
+
+function renderChart(data, metric) {
+  const colIdx = data.columns.indexOf(metric);
+  const labels = data.rows.map(r => r[0]);
+  const values = data.rows.map(r => r[colIdx] === 'N/A' || r[colIdx] === null ? null : parseFloat(r[colIdx]));
+
+  const palette = [
+    '#febd69','#f0a500','#e8911e','#dd7a0a',
+    '#4CAF50','#2e7d32','#2196F3','#0d47a1'
+  ];
+
+  if (evalChart) evalChart.destroy();
+  const ctx = document.getElementById('eval-chart').getContext('2d');
+  evalChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: palette,
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const v = ctx.parsed.y;
+              if (v === null) return 'N/A';
+              return metric === 'Coverage' ? `${(v*100).toFixed(1)}%` : v.toFixed(4);
+            }
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { color:'#ccc', maxRotation:30 }, grid: { color:'#333' } },
+        y: { ticks: { color:'#ccc' }, grid: { color:'#333' }, beginAtZero: true }
+      },
+      animation: { duration: 600 }
+    }
+  });
+}
+
+function toggleAcc(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('open');
+}
+</script>
+{% endblock %}

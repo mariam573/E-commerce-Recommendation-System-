@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %} GoShop{% endblock %}</title>
+  <meta name="description"
+    content="{% block meta_desc %}AIE425 Intelligent E-Commerce Recommender System{% endblock %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+  {% block head %}{% endblock %}
+</head>
+
+<body>
+
+  <!-- ═══ TOP NAVBAR ═══ -->
+  <header class="navbar">
+    <div class="navbar-inner">
+
+      <!-- Logo -->
+      <a href="/" class="logo" id="logo-link">
+        <span class="logo-icon">🛒</span>
+        <span class="logo-text"><span class="logo-accent">Go</span>Shop</span>
+      </a>
+
+      <!-- Search -->
+      <form class="search-bar" action="/" method="GET" id="search-form">
+        {% if cur_cat is defined and cur_cat %}
+        <input type="hidden" name="category" value="{{ cur_cat }}">
+        {% endif %}
+        <select class="search-cat-select" name="cat_sel" onchange="applyCategorySearch(this)" id="search-cat">
+          <option value="">All</option>
+          {% for cat in categories %}
+          <option value="{{ cat }}" {% if cur_cat is defined and cur_cat==cat %}selected{% endif %}>{{ cat }}</option>
+          {% endfor %}
+        </select>
+        <input class="search-input" type="text" name="q" id="search-input"
+          placeholder="Search products, brands, categories…" value="{{ search_q if search_q is defined else '' }}">
+        <button class="search-btn" type="submit" id="search-btn">🔍</button>
+      </form>
+
+      <!-- Right nav -->
+      <nav class="nav-right" id="main-nav">
+        <a href="/recommendations" class="nav-link {% if request.path == '/recommendations' %}active{% endif %}"
+          id="nav-recs">
+          ✨ Recommendations
+        </a>
+        <a href="/analysis" class="nav-link {% if request.path == '/analysis' %}active{% endif %}" id="nav-analysis">
+          📊 Analysis
+        </a>
+
+        <!-- User selector -->
+        <div class="user-selector" id="user-selector-wrap">
+          <button class="user-btn" onclick="toggleUserPanel()" id="user-btn">
+            👤 {{ user_display }}
+            <span class="caret">▾</span>
+          </button>
+          <div class="user-panel" id="user-panel">
+            <p class="panel-label">Switch User</p>
+            <form method="POST" action="/set_user" id="user-form">
+              <input type="hidden" name="next" value="{{ request.path }}">
+              <select name="user_id" class="user-select" onchange="this.form.submit()" id="user-select">
+                {% for u, name in all_users %}
+                <option value="{{ u }}" {% if u==uid %}selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+              </select>
+            </form>
+          </div>
+        </div>
+      </nav>
+
+    </div>
+  </header>
+
+  <!-- ═══ CATEGORY BAR ═══ -->
+  <div class="cat-bar" id="cat-bar">
+    <div class="cat-bar-inner">
+      <a href="/" class="cat-pill {% if cur_cat is defined and not cur_cat %}active{% endif %}" id="cat-all">All</a>
+      {% for cat in categories %}
+      <a href="/?category={{ cat }}" class="cat-pill {% if cur_cat is defined and cur_cat == cat %}active{% endif %}"
+        id="cat-{{ loop.index }}">
+        {{ cat }}
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ═══ MAIN CONTENT ═══ -->
+  <main class="main-content" id="main-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- ═══ FOOTER ═══ -->
+  <footer class="footer" id="main-footer">
+    <div class="footer-inner">
+      <p>AIE425 – Intelligent Recommender Systems &nbsp;|&nbsp; Alamein International University</p>
+      <p style="margin-top:4px;font-size:0.78rem;opacity:0.5">Collaborative · Content-Based · Knowledge-Based</p>
+    </div>
+  </footer>
+
+  <script src="/static/js/main.js"></script>
+  {% block scripts %}{% endblock %}
+</body>
+
+</html>

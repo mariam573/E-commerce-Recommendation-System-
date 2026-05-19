@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}GoShop – {{ total }} Products{% endblock %}
+{% block meta_desc %}Browse {{ total }} products across {{ categories|length }} categories. Powered by AI
+recommendations.{% endblock %}
+
+{% block content %}
+
+<!-- ─── Hero Banner ─────────────────────────────────────────────────────────── -->
+{% if not search_q and not cur_cat %}
+<section class="hero" id="hero-banner">
+  <div class="hero-content">
+    <h1 class="hero-title">Smart Shopping, Powered by AI</h1>
+    <p class="hero-sub">Personalised recommendations tailored to your taste.</p>
+    <a href="/recommendations" class="hero-cta" id="hero-cta-btn">✨ Get My Recommendations</a>
+  </div>
+  <div class="hero-badges">
+    <span class="hbadge">🤝 Collaborative</span>
+    <span class="hbadge">📝 Content-Based</span>
+    <span class="hbadge">🧠 Knowledge-Based</span>
+  </div>
+</section>
+{% endif %}
+
+<!-- ─── Filter / Sort Bar ───────────────────────────────────────────────────── -->
+<div class="toolbar" id="toolbar">
+  <div class="toolbar-left">
+    {% if search_q %}
+    <span class="toolbar-info">Results for "<strong>{{ search_q }}</strong>" — {{ total }} item{{ 's' if total != 1
+      }}</span>
+    {% elif cur_cat %}
+    <span class="toolbar-info"><strong>{{ cur_cat }}</strong> — {{ total }} item{{ 's' if total != 1 }}</span>
+    {% else %}
+    <span class="toolbar-info">Showing <strong>{{ total }}</strong> products</span>
+    {% endif %}
+  </div>
+  <div class="toolbar-right">
+    <label class="sort-label">Sort:</label>
+    <select class="sort-select" id="sort-select" onchange="applySort(this.value)">
+      <option value="" {% if sort_by=='' %}selected{% endif %}>Featured</option>
+      <option value="rating" {% if sort_by=='rating' %}selected{% endif %}>Avg. Rating</option>
+      <option value="price_asc" {% if sort_by=='price_asc' %}selected{% endif %}>Price: Low → High</option>
+      <option value="price_desc" {% if sort_by=='price_desc' %}selected{% endif %}>Price: High → Low</option>
+    </select>
+  </div>
+</div>
+
+<!-- ─── Product Grid ────────────────────────────────────────────────────────── -->
+<section class="product-grid" id="product-grid">
+  {% if products %}
+  {% for p in products %}
+  <article class="product-card" id="product-card-{{ p.product_id }}">
+    <a href="/product/{{ p.product_id }}" class="card-img-link">
+      <div class="card-img-wrap">
+        <img src="{{ p.image_url }}" alt="{{ p.name }}" class="card-img" loading="lazy">
+        {% if p.rating >= 4.5 %}
+        <span class="badge-bestseller">Best Seller</span>
+        {% elif p.rating >= 4.0 %}
+        <span class="badge-top">Top Rated</span>
+        {% endif %}
+      </div>
+    </a>
+    <div class="card-body">
+      <span class="card-cat">{{ p.category }}</span>
+      <a href="/product/{{ p.product_id }}" class="card-title">{{ p.name }}</a>
+      <p class="card-brand">{{ p.brand }}</p>
+      <div class="card-rating">
+        <span class="stars">{{ p.stars }}</span>
+        <span class="rating-num">{{ p.rating }}</span>
+      </div>
+      <div class="card-footer">
+        <span class="card-price">{{ p.price_fmt }}</span>
+        <a href="/product/{{ p.product_id }}" class="add-btn" id="view-btn-{{ p.product_id }}">View</a>
+      </div>
+    </div>
+  </article>
+  {% endfor %}
+  {% else %}
+  <div class="empty-state" id="empty-state">
+    <div class="empty-icon">🔍</div>
+    <h2>No products found</h2>
+    <p>Try a different search or browse all categories.</p>
+    <a href="/" class="hero-cta">Browse All Products</a>
+  </div>
+  {% endif %}
+</section>
+
+<!-- ─── Pagination ──────────────────────────────────────────────────────────── -->
+{% if n_pages > 1 %}
+<nav class="pagination" id="pagination" aria-label="Product pages">
+  {% if page > 1 %}
+  <a href="?page={{ page - 1 }}&category={{ cur_cat }}&q={{ search_q }}&sort={{ sort_by }}" class="page-btn"
+    id="prev-page">← Prev</a>
+  {% endif %}
+
+  {% for p in range(1, n_pages + 1) %}
+  {% if p == page %}
+  <span class="page-btn active">{{ p }}</span>
+  {% elif p <= 3 or p>= n_pages - 2 or (p >= page - 2 and p <= page + 2) %} <a
+      href="?page={{ p }}&category={{ cur_cat }}&q={{ search_q }}&sort={{ sort_by }}" class="page-btn"
+      id="page-btn-{{ p }}">{{ p }}</a>
+      {% elif p == 4 or p == n_pages - 3 %}
+      <span class="page-ellipsis">…</span>
+      {% endif %}
+      {% endfor %}
+
+      {% if page < n_pages %} <a href="?page={{ page + 1 }}&category={{ cur_cat }}&q={{ search_q }}&sort={{ sort_by }}"
+        class="page-btn" id="next-page">Next →</a>
+        {% endif %}
+</nav>
+{% endif %}
+
+{% endblock %}

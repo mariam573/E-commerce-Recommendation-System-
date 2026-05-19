@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+{% block title %}Get Recommendations – AIE425Shop{% endblock %}
+{% block meta_desc %}Get AI-powered personalised product recommendations using Collaborative, Content-Based, or Knowledge-Based filtering.{% endblock %}
+
+{% block head %}
+<style>
+.recs-layout { display:grid; grid-template-columns:320px 1fr; gap:28px; align-items:start; }
+@media(max-width:900px){ .recs-layout { grid-template-columns:1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header" id="recs-header">
+  <h1 class="page-title">✨ Get Recommendations</h1>
+  <p class="page-sub">Configure the algorithm and get AI-powered product picks for <strong>{{ user_display }}</strong>.</p>
+</div>
+
+<div class="recs-layout">
+
+  <!-- ── Control Panel ──────────────────────────────────────────────────────── -->
+  <aside class="control-panel" id="control-panel">
+
+    <div class="cp-section" id="cp-approach">
+      <label class="cp-label">Recommendation Approach</label>
+      <div class="approach-tabs" id="approach-tabs">
+        <button class="atab active" data-approach="cf"  onclick="switchApproach('cf',this)"  id="tab-cf">🤝 Collaborative</button>
+        <button class="atab"        data-approach="cb"  onclick="switchApproach('cb',this)"  id="tab-cb">📝 Content-Based</button>
+        <button class="atab"        data-approach="kb"  onclick="switchApproach('kb',this)"  id="tab-kb">🧠 Knowledge</button>
+      </div>
+    </div>
+
+    <!-- CF sub-options -->
+    <div class="cp-section" id="cf-options">
+      <label class="cp-label">CF Method</label>
+      <select class="cp-select" id="cf-method-select">
+        <option value="user_pearson">User-Based Pearson</option>
+        <option value="user_jaccard">User-Based Jaccard</option>
+        <option value="item_cosine">Item-Based Adj. Cosine</option>
+        <option value="mf_sgd">MF Gradient Descent</option>
+      </select>
+    </div>
+
+    <!-- CB sub-options -->
+    <div class="cp-section hidden" id="cb-options">
+      <label class="cp-label">Content Method</label>
+      <select class="cp-select" id="cb-method-select">
+        <option value="tfidf">TF-IDF + Cosine</option>
+        <option value="feature">Feature Vector</option>
+      </select>
+    </div>
+
+    <!-- KB sub-options -->
+    <div class="cp-section hidden" id="kb-options">
+      <label class="cp-label">KB Method</label>
+      <select class="cp-select" id="kb-method-select">
+        <option value="constraint">Constraint-Based</option>
+        <option value="cbr">Case-Based Reasoning</option>
+      </select>
+
+      <label class="cp-label" style="margin-top:14px">Max Budget (EGP)</label>
+      <input type="range" id="budget-slider" min="50" max="10000"
+             value="{{ profile.budget_max | int if profile.budget_max else 5000 }}"
+             step="50" oninput="document.getElementById('budget-val').textContent=this.value">
+      <span class="slider-val">EGP <span id="budget-val">{{ profile.budget_max | int if profile.budget_max else 5000 }}</span></span>
+
+      <label class="cp-label" style="margin-top:14px">Min Rating</label>
+      <input type="range" id="rating-slider" min="1" max="5" value="3" step="0.5"
+             oninput="document.getElementById('rating-val').textContent=this.value">
+      <span class="slider-val">⭐ <span id="rating-val">3</span></span>
+
+      <label class="cp-label" style="margin-top:14px">Preferred Categories</label>
+      <div class="multi-check" id="pref-cats">
+        {% for cat in cats_all %}
+          <label class="check-item">
+            <input type="checkbox" value="{{ cat }}"
+              {% set pref = profile.preferred_categories if profile.preferred_categories else '' %}
+              {% if cat in pref %}checked{% endif %}>
+            {{ cat }}
+          </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="cp-section" id="cp-topn">
+      <label class="cp-label">Number of Results</label>
+      <input type="range" id="topn-slider" min="5" max="20" value="10" step="1"
+             oninput="document.getElementById('topn-val').textContent=this.value">
+      <span class="slider-val"><span id="topn-val">10</span> products</span>
+    </div>
+
+    <button class="generate-btn" id="generate-btn" onclick="generateRecs()">
+      🚀 Generate Recommendations
+    </button>
+  </aside>
+
+  <!-- ── Results Panel ──────────────────────────────────────────────────────── -->
+  <section id="results-panel">
+    <div class="results-placeholder" id="results-placeholder">
+      <div class="placeholder-icon">🎯</div>
+      <p>Configure options on the left and click <strong>Generate</strong> to see your personalised picks.</p>
+    </div>
+    <div id="results-container" class="hidden"></div>
+    <div class="spinner hidden" id="rec-spinner">
+      <div class="spin-ring"></div>
+      <p>Computing recommendations…</p>
+    </div>
+  </section>
+
+</div>
+
+<!-- ── User History ────────────────────────────────────────────────────────── -->
+<section class="user-history-section" id="user-history-section">
+  <button class="history-toggle-btn" onclick="toggleHistory()">
+    <span>📋 Purchase &amp; Rating History — understanding why items are recommended for you</span>
+    <span class="history-arrow" id="history-arrow">▾</span>
+  </button>
+  <div class="history-body" id="history-body">
+    <div class="history-columns">
+
+      <!-- Purchased -->
+      <div class="history-col">
+        <h3 class="history-col-title">🛒 Purchased Items
+          <span class="history-count">{{ purchased_items | length }}</span>
+        </h3>
+        <div class="history-list">
+          {% if purchased_items %}
+            {% for p in purchased_items %}
+            <a href="{{ p.url }}" class="history-item">
+              <img src="{{ p.image_url }}" alt="{{ p.name }}" class="history-img" loading="lazy">
+              <div class="history-item-info">
+                <span class="history-item-name">{{ p.name }}</span>
+                <span class="history-item-meta">{{ p.category }} · {{ p.brand }}</span>
+                <span class="history-item-meta">{{ p.price_fmt }}{% if p.date %} · {{ p.date }}{% endif %}</span>
+              </div>
+            </a>
+            {% endfor %}
+          {% else %}
+            <p class="history-empty">No purchases recorded.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Rated -->
+      <div class="history-col">
+        <h3 class="history-col-title">⭐ Rated Items
+          <span class="history-count">{{ rated_items | length }}</span>
+        </h3>
+        <div class="history-list">
+          {% if rated_items %}
+            {% for p in rated_items %}
+            <a href="{{ p.url }}" class="history-item">
+              <img src="{{ p.image_url }}" alt="{{ p.name }}" class="history-img" loading="lazy">
+              <div class="history-item-info">
+                <span class="history-item-name">{{ p.name }}</span>
+                <span class="history-item-meta">{{ p.category }} · {{ p.brand }}</span>
+                <span class="history-item-rating">
+                  <span class="stars">{{ p.stars }}</span> {{ p.user_rating }}/5
+                </span>
+              </div>
+            </a>
+            {% endfor %}
+          {% else %}
+            <p class="history-empty">No ratings recorded.</p>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const CURRENT_UID = {{ uid }};
+
+function switchApproach(approach, btn) {
+  document.querySelectorAll('.atab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  ['cf-options','cb-options','kb-options'].forEach(id =>
+    document.getElementById(id).classList.add('hidden'));
+  document.getElementById(approach + '-options').classList.remove('hidden');
+}
+
+function generateRecs() {
+  const activeTab  = document.querySelector('.atab.active');
+  const approach   = activeTab.dataset.approach;
+  const topN       = parseInt(document.getElementById('topn-slider').value);
+  let method = '';
+
+  const payload = { user_id: CURRENT_UID, approach, top_n: topN };
+
+  if (approach === 'cf')       payload.method = document.getElementById('cf-method-select').value;
+  else if (approach === 'cb')  payload.method = document.getElementById('cb-method-select').value;
+  else {
+    payload.method      = document.getElementById('kb-method-select').value;
+    payload.budget_max  = parseInt(document.getElementById('budget-slider').value);
+    payload.min_rating  = parseFloat(document.getElementById('rating-slider').value);
+    payload.preferred_categories = [...document.querySelectorAll('#pref-cats input:checked')].map(el => el.value);
+  }
+
+  document.getElementById('results-placeholder').classList.add('hidden');
+  document.getElementById('results-container').classList.add('hidden');
+  document.getElementById('rec-spinner').classList.remove('hidden');
+
+  fetch('/api/recommend', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(data => {
+    document.getElementById('rec-spinner').classList.add('hidden');
+    if (data.error) {
+      showError(data.error); return;
+    }
+    renderResults(data.items, approach, payload.method);
+  })
+  .catch(err => {
+    document.getElementById('rec-spinner').classList.add('hidden');
+    showError(err.toString());
+  });
+}
+
+function renderResults(items, approach, method) {
+  const container = document.getElementById('results-container');
+  if (!items || items.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">🤔</div><h2>No results</h2><p>Try changing your filters.</p></div>';
+    container.classList.remove('hidden'); return;
+  }
+
+  const approachLabels = {cf:'Collaborative Filtering', cb:'Content-Based', kb:'Knowledge-Based'};
+  const methodLabels   = {
+    user_pearson:'User-Based Pearson', user_jaccard:'User-Based Jaccard',
+    item_cosine:'Item-Based Adj. Cosine', mf_sgd:'MF Gradient Descent',
+    tfidf:'TF-IDF + Cosine', feature:'Feature Vector',
+    constraint:'Constraint-Based', cbr:'Case-Based Reasoning'
+  };
+
+  let html = `<div class="recs-results-header">
+    <h2>🎯 ${items.length} Recommendations</h2>
+    <span class="method-badge">${approachLabels[approach]} · ${methodLabels[method]||method}</span>
+  </div>
+  <div class="rec-grid">`;
+
+  items.forEach(p => {
+    const stars = p.stars || '★★★★☆';
+    html += `
+    <article class="product-card rec-card" id="rec-result-${p.product_id}">
+      <a href="${p.url}" class="card-img-link">
+        <div class="card-img-wrap">
+          <img src="${p.image_url}" alt="${p.name}" class="card-img" loading="lazy">
+        </div>
+      </a>
+      <div class="card-body">
+        <span class="card-cat">${p.category}</span>
+        <a href="${p.url}" class="card-title">${p.name}</a>
+        <p class="card-brand">${p.brand}</p>
+        <div class="card-rating">
+          <span class="stars">${stars}</span>
+          <span class="rating-num">${p.rating}</span>
+        </div>
+        <div class="card-footer">
+          <span class="card-price">${p.price_fmt}</span>
+          <a href="${p.url}" class="add-btn">View</a>
+        </div>
+        <div class="explain-chip" title="${p.explanation}">
+          💡 ${p.explanation.substring(0,80)}${p.explanation.length>80?'…':''}
+        </div>
+      </div>
+    </article>`;
+  });
+
+  html += '</div>';
+  container.innerHTML = html;
+  container.classList.remove('hidden');
+}
+
+function showError(msg) {
+  const c = document.getElementById('results-container');
+  c.innerHTML = `<div class="error-box">⚠️ Error: ${msg}</div>`;
+  c.classList.remove('hidden');
+}
+
+/* ── User History toggle ── */
+function toggleHistory() {
+  const body  = document.getElementById('history-body');
+  const arrow = document.getElementById('history-arrow');
+  const open  = body.style.display !== 'none';
+  body.style.display = open ? 'none' : '';
+  arrow.textContent  = open ? '▸' : '▾';
+}
+</script>
+{% endblock %}
